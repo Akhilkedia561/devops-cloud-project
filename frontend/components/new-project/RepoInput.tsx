@@ -19,48 +19,59 @@ export default function RepoInput() {
 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-
   const perPage = 6;
 
   /* ---------------- FETCH REPOS ---------------- */
 
   useEffect(() => {
 
-    fetch("/api/github/repos")
+    async function fetchRepos() {
 
-      .then((res) => res.json())
+      try {
 
-      .then((data) => {
+        const res = await fetch("/api/github/repos");
 
-        if (Array.isArray(data)) {
+        const data = await res.json();
 
-          setRepos(data);
-          setFilteredRepos(data);
-
-        } else {
+        if (!Array.isArray(data)) {
 
           console.error("GitHub repo API error:", data);
+
+          setError(
+            data?.error || "Failed to fetch repositories"
+          );
 
           setRepos([]);
           setFilteredRepos([]);
 
+        } else {
+
+          setRepos(data);
+          setFilteredRepos(data);
+
         }
 
-        setLoading(false);
-
-      })
-
-      .catch((err) => {
+      } catch (err) {
 
         console.error("Failed to fetch repos:", err);
 
+        setError("Network error while fetching repos");
+
         setRepos([]);
         setFilteredRepos([]);
+
+      } finally {
+
         setLoading(false);
 
-      });
+      }
+
+    }
+
+    fetchRepos();
 
   }, []);
 
@@ -69,7 +80,9 @@ export default function RepoInput() {
   useEffect(() => {
 
     const filtered = repos.filter((repo) =>
-      repo.full_name.toLowerCase().includes(search.toLowerCase())
+      repo.full_name
+        .toLowerCase()
+        .includes(search.toLowerCase())
     );
 
     setFilteredRepos(filtered);
@@ -81,11 +94,12 @@ export default function RepoInput() {
 
   const start = (page - 1) * perPage;
 
-  const paginatedRepos = Array.isArray(filteredRepos)
-    ? filteredRepos.slice(start, start + perPage)
-    : [];
+  const paginatedRepos =
+    filteredRepos.slice(start, start + perPage);
 
-  const totalPages = Math.ceil(filteredRepos.length / perPage);
+  const totalPages = Math.ceil(
+    filteredRepos.length / perPage
+  );
 
   /* ---------------- UI ---------------- */
 
@@ -133,9 +147,21 @@ export default function RepoInput() {
 
       )}
 
+      {/* ERROR */}
+
+      {!loading && error && (
+
+        <div className="text-red-400 text-sm">
+
+          {error}
+
+        </div>
+
+      )}
+
       {/* EMPTY STATE */}
 
-      {!loading && filteredRepos.length === 0 && (
+      {!loading && !error && filteredRepos.length === 0 && (
 
         <p className="text-gray-500 text-sm">
           No repositories found
@@ -143,73 +169,84 @@ export default function RepoInput() {
 
       )}
 
-      {/* REPO GRID */}
+      {/* REPOSITORY GRID */}
 
-      <div className="grid md:grid-cols-2 gap-3">
+      {!loading && !error && (
 
-        {paginatedRepos.map((repo) => (
+        <div className="grid md:grid-cols-2 gap-3">
 
-          <div
-            key={repo.id}
-            onClick={() => setSelectedRepo(repo.full_name)}
-            className={`p-4 rounded-lg border cursor-pointer transition
-            ${
-              selectedRepo === repo.full_name
-                ? "border-blue-500 bg-zinc-800"
-                : "border-zinc-800 hover:bg-zinc-800"
-            }`}
-          >
+          {paginatedRepos.map((repo) => (
 
-            <div className="flex justify-between items-center">
+            <div
+              key={repo.id}
+              onClick={() =>
+                setSelectedRepo(repo.full_name)
+              }
+              className={`p-4 rounded-lg border cursor-pointer transition
+              ${
+                selectedRepo === repo.full_name
+                  ? "border-blue-500 bg-zinc-800"
+                  : "border-zinc-800 hover:bg-zinc-800"
+              }`}
+            >
 
-              <div>
+              <div className="flex justify-between items-center">
 
-                <p className="font-medium text-sm">
-                  {repo.name}
-                </p>
+                <div>
 
-                <p className="text-xs text-gray-500">
-                  {repo.full_name}
-                </p>
+                  <p className="font-medium text-sm">
+                    {repo.name}
+                  </p>
+
+                  <p className="text-xs text-gray-500">
+                    {repo.full_name}
+                  </p>
+
+                </div>
+
+                {/* PUBLIC / PRIVATE BADGE */}
+
+                <span
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md
+                  ${
+                    repo.private
+                      ? "bg-red-900/30 text-red-400"
+                      : "bg-green-900/30 text-green-400"
+                  }`}
+                >
+
+                  {repo.private ? (
+                    <Lock size={12} />
+                  ) : (
+                    <Globe size={12} />
+                  )}
+
+                  {repo.private
+                    ? "Private"
+                    : "Public"}
+
+                </span>
 
               </div>
 
-              {/* PRIVATE / PUBLIC BADGE */}
-
-              <span
-                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md
-                ${
-                  repo.private
-                    ? "bg-red-900/30 text-red-400"
-                    : "bg-green-900/30 text-green-400"
-                }`}
-              >
-
-                {repo.private ? (
-                  <Lock size={12} />
-                ) : (
-                  <Globe size={12} />
-                )}
-
-                {repo.private ? "Private" : "Public"}
-
-              </span>
+              <p className="text-xs text-gray-500 mt-2">
+                Updated{" "}
+                {new Date(
+                  repo.updated_at
+                ).toLocaleDateString()}
+              </p>
 
             </div>
 
-            <p className="text-xs text-gray-500 mt-2">
-              Updated {new Date(repo.updated_at).toLocaleDateString()}
-            </p>
+          ))}
 
-          </div>
+        </div>
 
-        ))}
-
-      </div>
+      )}
 
       {/* PAGINATION */}
 
-      {totalPages > 1 && (
+      {!loading && !error && totalPages > 1 && (
 
         <div className="flex justify-between items-center text-sm text-gray-400">
 

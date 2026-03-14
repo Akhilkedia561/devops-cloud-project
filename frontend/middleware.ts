@@ -5,13 +5,17 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  const session = await auth();
+  const { userId, redirectToSignIn } = await auth();
 
-  if (!session.userId && isProtectedRoute(req)) {
-    return session.redirectToSignIn();
+  // protect dashboard routes
+  if (!userId && isProtectedRoute(req)) {
+    return redirectToSignIn();
   }
 });
 
 export const config = {
-  matcher: ["/((?!_next|.*\\..*).*)"],
+  matcher: [
+    // run middleware on all routes except static files
+    "/((?!_next|.*\\..*).*)",
+  ],
 };
