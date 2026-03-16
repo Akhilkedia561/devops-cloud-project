@@ -1,33 +1,56 @@
-import { cloneRepo } from "./clone.service.js";
-import { detectFramework } from "./detect.service.js";
-import { buildProject } from "./build.service.js";
-import { dockerizeProject } from "./docker.service.js";
+import { cloneRepo } from "./clone.service.js"
+import { detectFramework } from "./detect.service.js"
+import { buildProject } from "./build.service.js"
+import { deploymentStore } from "../store/deployment.store.js"
+
+const log = (deploymentId: string, message: string) => {
+  console.log(message)
+  deploymentStore.appendLog(deploymentId, message)
+}
 
 export const runDeploymentPipeline = async (
   repo: string,
-  branch: string
+  branch: string,
+  deploymentId: string
 ) => {
-  console.log("Cloning repository...");
+  const deployment = deploymentStore.get(deploymentId)
 
-  const { deploymentId, projectPath } = await cloneRepo(repo, branch);
+  if (!deployment) {
+    throw new Error("Deployment not found")
+  }
 
-  console.log("Detecting framework...");
+  try {
+    log(deploymentId, "Cloning repository...")
+    deploymentStore.update(deploymentId, { status: "CLONING" })
 
-  const framework = detectFramework(projectPath);
+    const { projectPath } = await cloneRepo(repo, branch, deploymentId)
 
-  console.log("Framework detected:", framework);
+    log(deploymentId, "Detecting framework...")
+    const framework = detectFramework(projectPath)
+    deploymentStore.update(deploymentId, { framework })
+    log(deploymentId, `Framework detected: ${framework}`)
 
-  console.log("Installing dependencies and building...");
+    log(deploymentId, "Installing dependencies and building...")
+    deploymentStore.update(deploymentId, { status: "BUILDING" })
 
-  await buildProject(projectPath);
+    await buildProject(projectPath, framework)
 
-  console.log("Creating Docker container...");
+    log(deploymentId, "Docker build step skipped (handled by CI/CD)")
+    deploymentStore.update(deploymentId, { status: "SUCCESS" })
 
-  const image = await dockerizeProject(projectPath, deploymentId);
+    return {
+      deploymentId,
+      framework,
+      image: "pending-ci-build",
+      status: "SUCCESS"
+    }
 
-  return {
-    deploymentId,
-    framework,
-    image,
-  };
-};
+  } catch (error: any) {
+    const message = error?.message || "Unknown error during deployment"
+
+    log(deploymentId, `Deployment failed: ${message}`)
+    deploymentStore.update(deploymentId, { status: "FAILED" })
+
+    throw error
+  }
+}

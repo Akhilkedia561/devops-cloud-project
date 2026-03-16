@@ -1,0 +1,11 @@
+{
+  "watch": ["src"],
+  "ignore": [
+    "deployments/**",
+    "node_modules/**",
+    "dist/**",
+    "*.log"
+  ],
+  "ext": "ts,json",
+  "exec": "node --loader ts-node/esm src/server.ts"
+}
