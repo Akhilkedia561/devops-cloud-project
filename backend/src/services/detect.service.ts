@@ -3,21 +3,35 @@ import path from "path";
 
 export const detectFramework = (projectPath: string) => {
   const packageJsonPath = path.join(projectPath, "package.json");
+  const requirementsPath = path.join(projectPath, "requirements.txt");
+  const nextConfig = path.join(projectPath, "next.config.js");
 
-  if (!fs.existsSync(packageJsonPath)) {
-    return "unknown";
+  // Python project
+  if (fs.existsSync(requirementsPath)) {
+    return "python";
   }
 
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
+  // Node based project
+  if (fs.existsSync(packageJsonPath)) {
+    const packageJson = JSON.parse(
+      fs.readFileSync(packageJsonPath, "utf-8")
+    );
 
-  const deps = {
-    ...packageJson.dependencies,
-    ...packageJson.devDependencies,
-  };
+    const deps = {
+      ...packageJson.dependencies,
+      ...packageJson.devDependencies,
+    };
 
-  if (deps.next) return "nextjs";
-  if (deps.react) return "react";
-  if (deps.express) return "node";
+    if (deps?.next) {
+      return "nextjs";
+    }
 
-  return "node";
+    if (deps?.react) {
+      return "react";
+    }
+
+    return "node";
+  }
+
+  return "unknown";
 };
