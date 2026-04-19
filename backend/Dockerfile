@@ -1,33 +1,28 @@
-# Stage 1: Build
-FROM node:20-alpine AS builder
-
+FROM node:20-alpine AS development
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install
-
-# Copy source code
 COPY . .
+EXPOSE 8000
+EXPOSE 8001
+CMD ["npm", "run", "dev"]
 
-# Build TypeScript
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
 RUN npm run build
 
-
-# Stage 2: Production
-FROM node:20-alpine
-
+FROM node:20-alpine AS production
 WORKDIR /app
-
-# Copy only necessary files from builder
+RUN apk add --no-cache docker-cli
+RUN addgroup -S shipstack && adduser -S shipstack -G shipstack
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
+RUN npm ci --omit=dev 
 COPY --from=builder /app/dist ./dist
-
-# Expose backend port (change if needed)
-EXPOSE 5000
-
-# Run backend
-CMD ["node", "dist/index.js"]
+RUN chown -R shipstack:shipstack /app
+USER shipstack
+EXPOSE 8000
+EXPOSE 8001
+CMD ["node", "dist/server.js"]
