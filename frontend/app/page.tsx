@@ -94,7 +94,7 @@ export default function HomePage() {
           </h2>
 
           <p className="text-gray-400 max-w-3xl mx-auto text-lg">
-            ShipStack is a Docker-native CI/CD platform that gives
+            SHIPSTACK is a Docker-native CI/CD platform that gives
             developers full control over builds, deployments,
             and infrastructure without vendor lock-in.
           </p>
