@@ -14,9 +14,10 @@ pipeline {
         WEBSOCKET_PORT = "8001"
         FRONTEND_PORT  = "3000"
 
-        // TEMP SECRETS (works for now)
-        JWT_SECRET = "test_jwt_secret"
-        CLERK_SECRET_KEY = "sk_test_ZYAgqy9RL9VnwXlje5B175UCDcYjD9KL5yKfRs4Hke"
+        // NEW: Image Versioning using commit SHA
+        IMAGE_TAG = "${env.GIT_COMMIT}"
+
+        // PUBLIC (safe)
         NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_test_Y2l2aWwtdG9tY2F0LTYzLmNsZXJrLmFjY291bnRzLmRldiQ"
     }
 
@@ -24,14 +25,14 @@ pipeline {
 
         stage('Build Backend Image') {
             steps {
-                bat '"%DOCKER%" build -t %BACKEND_IMAGE% -f backend/Dockerfile backend'
+                bat '"%DOCKER%" build -t %BACKEND_IMAGE%:%IMAGE_TAG% -f backend/Dockerfile backend'
             }
         }
 
         stage('Build Frontend Image') {
             steps {
                 bat '''
-                "%DOCKER%" build -t %FRONTEND_IMAGE% ^
+                "%DOCKER%" build -t %FRONTEND_IMAGE%:%IMAGE_TAG% ^
                 --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 ^
                 --build-arg NEXT_PUBLIC_WS_URL=ws://localhost:8001 ^
                 --build-arg NEXT_PUBLIC_APP_NAME=ShipStack ^
@@ -54,17 +55,18 @@ pipeline {
 
         stage('Run Backend Container') {
             steps {
-                bat '''
-                "%DOCKER%" run -d ^
-                -p %BACKEND_PORT%:%BACKEND_PORT% ^
-                -p %WEBSOCKET_PORT%:%WEBSOCKET_PORT% ^
-                --name %BACKEND_CONTAINER% ^
-                -e NODE_ENV=production ^
-                -e PORT=%BACKEND_PORT% ^
-                -e JWT_SECRET=%JWT_SECRET% ^
-                -e CLERK_SECRET_KEY=%CLERK_SECRET_KEY% ^
-                %BACKEND_IMAGE%
-                '''
+                withCredentials([string(credentialsId: 'CLERK_SECRET_KEY', variable: 'CLERK_SECRET_KEY')]) {
+                    bat '''
+                    "%DOCKER%" run -d ^
+                    -p %BACKEND_PORT%:%BACKEND_PORT% ^
+                    -p %WEBSOCKET_PORT%:%WEBSOCKET_PORT% ^
+                    --name %BACKEND_CONTAINER% ^
+                    -e NODE_ENV=production ^
+                    -e PORT=%BACKEND_PORT% ^
+                    -e CLERK_SECRET_KEY=%CLERK_SECRET_KEY% ^
+                    %BACKEND_IMAGE%:%IMAGE_TAG%
+                    '''
+                }
             }
         }
 
@@ -79,10 +81,9 @@ pipeline {
                 -e NEXT_PUBLIC_WS_URL=ws://localhost:8001 ^
                 -e NEXT_PUBLIC_APP_NAME=ShipStack ^
                 -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=%NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY% ^
-                -e CLERK_SECRET_KEY=%CLERK_SECRET_KEY% ^
                 -e NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in ^
                 -e NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up ^
-                %FRONTEND_IMAGE%
+                %FRONTEND_IMAGE%:%IMAGE_TAG%
                 '''
             }
         }
@@ -90,7 +91,7 @@ pipeline {
 
     post {
         success {
-            echo "✅ Deployment Successful!"
+            echo "✅ Deployment Successful with tag ${IMAGE_TAG}"
         }
         failure {
             echo "❌ Deployment Failed!"
