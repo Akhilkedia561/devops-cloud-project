@@ -33,8 +33,8 @@ pipeline {
             steps {
                 bat '''
                 "%DOCKER%" build -t %FRONTEND_IMAGE%:%IMAGE_TAG% ^
-                --build-arg NEXT_PUBLIC_API_URL=http://localhost:8000 ^
-                --build-arg NEXT_PUBLIC_WS_URL=ws://localhost:8001 ^
+                --build-arg NEXT_PUBLIC_API_URL=http://13.236.136.142:8000 ^
+                --build-arg NEXT_PUBLIC_WS_URL=ws://13.236.136.142:8001 ^
                 --build-arg NEXT_PUBLIC_APP_NAME=ShipStack ^
                 --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=%NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY% ^
                 --build-arg NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in ^
@@ -77,8 +77,8 @@ pipeline {
                 -p %FRONTEND_PORT%:%FRONTEND_PORT% ^
                 --name %FRONTEND_CONTAINER% ^
                 -e NODE_ENV=production ^
-                -e NEXT_PUBLIC_API_URL=http://localhost:8000 ^
-                -e NEXT_PUBLIC_WS_URL=ws://localhost:8001 ^
+                -e NEXT_PUBLIC_API_URL=http://13.236.136.142:8000 ^
+                -e NEXT_PUBLIC_WS_URL=ws://13.236.136.142:8001 ^
                 -e NEXT_PUBLIC_APP_NAME=ShipStack ^
                 -e NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=%NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY% ^
                 -e NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in ^
