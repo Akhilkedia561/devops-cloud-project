@@ -1,19 +1,17 @@
 "use client";
 
-import { Rocket, GitBranch, CheckCircle, Loader2 } from "lucide-react";
+import { Rocket, GitBranch, CheckCircle, Loader2, XCircle } from "lucide-react";
 
 interface DeploymentHeaderProps {
-  project?: string;
-  branch?: string;
-  commit?: string;
-  status?: "building" | "success" | "failed";
+  project: string;
+  branch: string;
+  status: string;
 }
 
 export default function DeploymentHeader({
-  project = "ShipStack Frontend",
-  branch = "main",
-  commit = "a1f3e2c",
-  status = "building",
+  project,
+  branch,
+  status,
 }: DeploymentHeaderProps) {
   return (
     <div className="bg-zinc-900/60 border border-zinc-800 rounded-xl p-6 backdrop-blur flex justify-between items-center">
@@ -26,20 +24,23 @@ export default function DeploymentHeader({
             {branch}
           </span>
 
-          <span className="font-mono">{commit}</span>
-
           <span className="flex items-center gap-1">
-            {status === "building" && (
+            {(status === "QUEUED" || status === "CLONING" || status === "BUILDING") && (
               <>
-                <Loader2 size={14} className="animate-spin" />
-                Building
+                <Loader2 size={14} className="animate-spin text-blue-400" />
+                <span className="text-blue-400">{status}</span>
               </>
             )}
-
-            {status === "success" && (
+            {status === "SUCCESS" && (
               <>
                 <CheckCircle size={14} className="text-green-400" />
-                Deployed
+                <span className="text-green-400">Deployed</span>
+              </>
+            )}
+            {status === "FAILED" && (
+              <>
+                <XCircle size={14} className="text-red-400" />
+                <span className="text-red-400">Failed</span>
               </>
             )}
           </span>
