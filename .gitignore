@@ -138,3 +138,7 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 *.tar
+# ShipStack runtime artifacts
+backend/deployments/
+backend/storage/
+backend/shipstack.db

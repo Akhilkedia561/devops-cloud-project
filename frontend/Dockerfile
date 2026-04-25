@@ -1,65 +1,29 @@
-# ============================================================
-#  ShipStack — Frontend Dockerfile
-#  frontend/Dockerfile
-#
-#  REQUIRES: frontend/.dockerignore exists with node_modules
-#  and .next listed inside it. Without .dockerignore, COPY . .
-#  pastes Windows/Mac binaries into the image and breaks it.
-# ============================================================
-
-FROM node:20-alpine AS development
-
-WORKDIR /app
-
-COPY package*.json ./
-
-# npm install runs INSIDE Alpine Linux container.
-# Installs musl-compatible binaries (lightningcss-linux-x64-musl etc).
-# .dockerignore ensures local node_modules are never copied over these.
-RUN npm install
-
-# Copy source. node_modules and .next are excluded by .dockerignore.
-COPY . .
-
-EXPOSE 3000
-
-ENV NODE_ENV=development
-
-CMD ["npm", "run", "dev"]
-
-
-# ──────────────────────────────
-#  Production (use later)
-# ──────────────────────────────
+# ---------- Stage 1: Build ----------
 FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install dependencies
 COPY package*.json ./
 RUN npm install
+
+# Copy source code
 COPY . .
 
-ENV NEXT_TELEMETRY_DISABLED=1
-
+# Build Next.js app
 RUN npm run build
 
-FROM node:20-alpine AS production
+
+# ---------- Stage 2: Production ----------
+FROM node:20-alpine
 
 WORKDIR /app
 
-RUN addgroup -S shipstack && adduser -S shipstack -G shipstack
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
 COPY --from=builder /app/package*.json ./
-RUN npm ci --omit=dev
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-
-RUN chown -R shipstack:shipstack /app
-USER shipstack
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start"]
+CMD ["npm", "start"]

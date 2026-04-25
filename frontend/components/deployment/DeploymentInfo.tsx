@@ -1,12 +1,21 @@
 "use client";
 
-export default function DeploymentInfo() {
+interface DeploymentInfoProps {
+  deploymentId: string;
+  framework: string;
+  status: string;
+}
+
+export default function DeploymentInfo({
+  deploymentId,
+  framework,
+  status,
+}: DeploymentInfoProps) {
   const info = [
-    { label: "Status", value: "Building" },
-    { label: "Region", value: "us-east-1" },
-    { label: "Duration", value: "1m 24s" },
-    { label: "Container ID", value: "a8f2c91" },
-    { label: "Image", value: "shipstack:latest" },
+    { label: "Status", value: status },
+    { label: "Framework", value: framework },
+    { label: "Deployment ID", value: deploymentId.slice(0, 8) },
+    { label: "Image", value: "pending-ci-build" },
   ];
 
   return (
@@ -17,14 +26,9 @@ export default function DeploymentInfo() {
 
       <div className="space-y-3 text-sm">
         {info.map((item, i) => (
-          <div
-            key={i}
-            className="flex justify-between text-gray-400"
-          >
+          <div key={i} className="flex justify-between text-gray-400">
             <span>{item.label}</span>
-            <span className="text-white font-mono">
-              {item.value}
-            </span>
+            <span className="text-white font-mono">{item.value}</span>
           </div>
         ))}
       </div>
