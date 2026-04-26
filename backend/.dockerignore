@@ -1,6 +1,38 @@
+# Dependencies — always reinstalled inside image
 node_modules
+
+# Build output — built inside image
 dist
+
+# Environment files
 .env
-.env.local
+.env.*
+!.env.example
+
+# Runtime artifacts — must NOT be baked into image
+shipstack.db
+storage/
+deployments/
+
+# Logs
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Git
+.git
+.gitignore
+
+# Editor
+.vscode
+.idea
+
+# OS
 .DS_Store
+
+# Misc
+coverage
+tmp
+temp

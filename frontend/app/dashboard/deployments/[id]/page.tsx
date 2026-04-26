@@ -9,16 +9,16 @@ export default function DeploymentPage() {
   return (
     <div className="p-8 space-y-6">
 
-      <DeploymentHeader />
+      <DeploymentHeader project="—" branch="—" status="BUILDING" />
 
-      <PipelineStages />
+      <PipelineStages status="BUILDING" />
 
       <div className="grid grid-cols-3 gap-6">
         <div className="col-span-2">
-          <LogsViewer />
+          <LogsViewer logs={[]} />
         </div>
 
-        <DeploymentInfo />
+        <DeploymentInfo deploymentId="—" framework="—" status="BUILDING" />
       </div>
 
     </div>

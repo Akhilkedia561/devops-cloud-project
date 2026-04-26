@@ -49,7 +49,7 @@ function DashboardMock() {
             cursor: "pointer", transition: "all .2s",
           }}>{item}</div>
         ))}
-        <div style={{ marginTop: "auto", padding: "20px 16px 0", borderTop: "1px solid var(--c-border)", marginTop: 160 }}>
+        <div style={{ marginTop: 160, padding: "20px 16px 0", borderTop: "1px solid var(--c-border)" }}>
           <div style={{ color: "var(--c-muted)", fontSize: 11 }}>ayushkar2005</div>
           <div style={{ color: "rgba(255,255,255,0.18)", fontSize: 10, marginTop: 2 }}>Pro plan</div>
         </div>

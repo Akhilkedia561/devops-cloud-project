@@ -30,6 +30,16 @@ export const runDeploymentPipeline = async (
     saveDeploymentPath(deploymentId, projectPath)
     log(deploymentId, `Repository cloned to ${projectPath}`)
 
+    // ──────────────────────────────────────────────────────
+    //  FIXED: detectFramework MUST run BEFORE rmSync.
+    //  Previously it was called after the folder was deleted
+    //  which caused it to always return 'unknown' or crash.
+    // ──────────────────────────────────────────────────────
+    log(deploymentId, "Detecting framework...")
+    const framework = detectFramework(projectPath)
+    deploymentStore.update(deploymentId, { framework })
+    log(deploymentId, `Framework detected: ${framework}`)
+
     log(deploymentId, "Archiving source code...")
     const archivePath = await archiveRepo(projectPath, deploymentId)
     saveArchivePath(deploymentId, archivePath)
@@ -38,11 +48,6 @@ export const runDeploymentPipeline = async (
     // Cleanup cloned folder — archive is all we need from here
     fs.rmSync(projectPath, { recursive: true, force: true })
     log(deploymentId, "Cleaned up cloned source.")
-
-    log(deploymentId, "Detecting framework...")
-    const framework = detectFramework(projectPath)
-    deploymentStore.update(deploymentId, { framework })
-    log(deploymentId, `Framework detected: ${framework}`)
 
     log(deploymentId, "Installing dependencies and building...")
     deploymentStore.update(deploymentId, { status: "BUILDING" })
@@ -59,8 +64,8 @@ export const runDeploymentPipeline = async (
       status: "SUCCESS"
     }
 
-  } catch (error: any) {
-    const message = error?.message || "Unknown error during deployment"
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error during deployment"
     log(deploymentId, `Deployment failed: ${message}`)
     deploymentStore.update(deploymentId, { status: "FAILED" })
     throw error
