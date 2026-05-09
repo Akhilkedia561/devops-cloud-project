@@ -18,7 +18,7 @@ pipeline {
         IMAGE_TAG = "${env.GIT_COMMIT}"
 
         // UPDATED: New EC2 public IP
-        EC2_IP = "13.211.191.167"
+        EC2_IP = "32.236.95.118"
     }
 
     stages {
